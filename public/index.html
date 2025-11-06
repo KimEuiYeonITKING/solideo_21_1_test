@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Windows 시스템 모니터링</title>
+  <link rel="stylesheet" href="/css/style.css">
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <!-- Socket.io CDN -->
+  <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <!-- 헤더 -->
+    <header class="header">
+      <h1>Windows 시스템 리소스 모니터링</h1>
+      <p class="subtitle">실시간 모니터링 & PDF 리포트 생성</p>
+    </header>
+
+    <!-- 상태 표시줄 -->
+    <div class="status-bar" id="statusBar">
+      <div class="status-item">
+        <span class="status-label">상태:</span>
+        <span class="status-value" id="statusText">대기 중...</span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">경과 시간:</span>
+        <span class="status-value" id="elapsedTime">0초 / 300초</span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">진행률:</span>
+        <span class="status-value" id="progress">0%</span>
+      </div>
+    </div>
+
+    <!-- 진행 바 -->
+    <div class="progress-bar-container">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <!-- 컨트롤 버튼 -->
+    <div class="controls">
+      <button id="startBtn" class="btn btn-primary">모니터링 시작</button>
+      <button id="stopBtn" class="btn btn-danger" disabled>모니터링 중지</button>
+      <button id="downloadBtn" class="btn btn-success" disabled>PDF 다운로드</button>
+    </div>
+
+    <!-- 시스템 정보 -->
+    <section class="section" id="systemInfoSection" style="display: none;">
+      <h2>시스템 정보</h2>
+      <div class="info-grid" id="systemInfo">
+        <div class="info-item">
+          <strong>OS:</strong>
+          <span id="osInfo">-</span>
+        </div>
+        <div class="info-item">
+          <strong>CPU:</strong>
+          <span id="cpuInfo">-</span>
+        </div>
+        <div class="info-item">
+          <strong>메모리:</strong>
+          <span id="memoryInfo">-</span>
+        </div>
+        <div class="info-item">
+          <strong>GPU:</strong>
+          <span id="gpuInfo">-</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 실시간 데이터 -->
+    <section class="section" id="realtimeSection" style="display: none;">
+      <h2>실시간 모니터링 데이터</h2>
+
+      <!-- 현재 값 카드 -->
+      <div class="cards-grid">
+        <div class="card">
+          <h3>CPU 사용률</h3>
+          <div class="value" id="cpuValue">0%</div>
+          <div class="label">온도: <span id="cpuTemp">-</span></div>
+        </div>
+
+        <div class="card">
+          <h3>메모리 사용률</h3>
+          <div class="value" id="memoryValue">0%</div>
+          <div class="label"><span id="memoryUsed">0 GB</span> / <span id="memoryTotal">0 GB</span></div>
+        </div>
+
+        <div class="card">
+          <h3>디스크 사용률</h3>
+          <div class="value" id="diskValue">0%</div>
+          <div class="label">I/O: <span id="diskIO">-</span></div>
+        </div>
+
+        <div class="card">
+          <h3>네트워크</h3>
+          <div class="value" id="networkValue">0 KB/s</div>
+          <div class="label">↓ <span id="networkRx">0</span> | ↑ <span id="networkTx">0</span> KB/s</div>
+        </div>
+      </div>
+
+      <!-- 차트 -->
+      <div class="charts-grid">
+        <div class="chart-container">
+          <h3>CPU 사용률 (%)</h3>
+          <canvas id="cpuChart"></canvas>
+        </div>
+
+        <div class="chart-container">
+          <h3>메모리 사용률 (%)</h3>
+          <canvas id="memoryChart"></canvas>
+        </div>
+
+        <div class="chart-container">
+          <h3>디스크 I/O (KB/s)</h3>
+          <canvas id="diskChart"></canvas>
+        </div>
+
+        <div class="chart-container">
+          <h3>네트워크 트래픽 (KB/s)</h3>
+          <canvas id="networkChart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- 데이터 테이블 -->
+    <section class="section" id="dataTableSection" style="display: none;">
+      <h2>측정 데이터 (최근 10개)</h2>
+      <div class="table-wrapper">
+        <table class="data-table" id="dataTable">
+          <thead>
+            <tr>
+              <th>시각</th>
+              <th>CPU (%)</th>
+              <th>메모리 (%)</th>
+              <th>디스크 (%)</th>
+              <th>네트워크 (KB/s)</th>
+            </tr>
+          </thead>
+          <tbody id="dataTableBody">
+            <!-- 동적으로 추가됨 -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- PDF 생성 상태 -->
+    <div class="modal" id="pdfModal" style="display: none;">
+      <div class="modal-content">
+        <h3 id="modalTitle">모니터링 완료</h3>
+        <p id="modalMessage">PDF 리포트를 생성하는 중입니다...</p>
+        <div class="spinner"></div>
+      </div>
+    </div>
+
+    <!-- 오류 메시지 -->
+    <div class="alert alert-error" id="errorAlert" style="display: none;">
+      <strong>오류!</strong> <span id="errorMessage"></span>
+    </div>
+
+    <!-- 푸터 -->
+    <footer class="footer">
+      <p>&copy; 2025 Windows System Monitor | Node.js + Socket.io + Chart.js</p>
+    </footer>
+  </div>
+
+  <!-- 애플리케이션 스크립트 -->
+  <script src="/js/app.js"></script>
+</body>
+</html>

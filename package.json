@@ -1,0 +1,36 @@
+{
+  "name": "windows-system-monitor-pdf",
+  "version": "1.0.0",
+  "description": "Windows 환경에서 동작하는 웹 기반 실시간 시스템 리소스 모니터링 및 PDF 리포트 생성 도구",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "nodemon server/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "system-monitor",
+    "windows",
+    "pdf-report",
+    "real-time",
+    "websocket"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.6.1",
+    "systeminformation": "^5.21.20",
+    "pdfkit": "^0.13.0",
+    "chart.js": "^4.4.0",
+    "chartjs-node-canvas": "^4.1.6",
+    "dotenv": "^16.3.1",
+    "fs-extra": "^11.2.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
